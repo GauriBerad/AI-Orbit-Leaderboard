@@ -1,36 +1,27 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AI Orbit Leaderboard
 
-## Getting Started
+A production-ready module built for AI Orbit to discover, compare, and track the global AI ecosystem in real time.
 
-First, run the development server:
+[Live Demo](https://ai-orbit-leaderboard.vercel.app/)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Overview
+This application features a high-performance ecosystem leaderboard displaying top-tier AI tools and models. It includes real-time search, dynamic sorting, category filtering, and individual deep-dive detail pages with historical tracking.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Features
+* **Real-Time Rankings:** Live tracking of AI platforms with performance metrics, growth trends, and active user counts.
+* **Interactive Filtering & Sorting:** Instant search by name or description, category filter pills, and dynamic sorting by default rank, highest score, or fastest growth.
+* **Detail Views:** Dedicated dynamic routes (`/leaderboard/[slug]`) showcasing historical ranking progression and direct external links.
+* **Design System:** Built with a minimal, dark-mode aesthetic (`bg-slate-950`), custom cards, and typography aligned with the AI Orbit visual guidelines.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Tech Stack
+* **Frontend:** Next.js (App Router), React, TypeScript, Tailwind CSS, Lucide Icons
+* **Backend:** Next.js API Routes, Node.js, PostgreSQL (`pg`)
+* **Database:** Neon PostgreSQL
+* **Deployment:** Vercel
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Local Setup & Installation
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. **Clone the repository:**
+   ```bash
+   git clone [https://github.com/GauriBerad/AI-Orbit-Leaderboard.git](https://github.com/GauriBerad/AI-Orbit-Leaderboard.git)
+   cd AI-Orbit-Leaderboard
