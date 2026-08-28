@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { TrendingUp, Users, ExternalLink, Sparkles, Search, Layers, Flame, Zap, ArrowUpDown } from 'lucide-react'
+import { TrendingUp, Users, ExternalLink, Sparkles, Search, Layers, Flame, Zap, Bookmark } from 'lucide-react'
 
 interface HistoryItem {
   id: string
@@ -36,6 +36,12 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState('All')
   const [sortBy, setSortBy] = useState<'rank' | 'score' | 'growth'>('rank')
   const [loading, setLoading] = useState(true)
+  
+  // Comparison & Bookmarks States
+  const [comparedIds, setComparedIds] = useState<string[]>([])
+  const [showCompareModal, setShowCompareModal] = useState(false)
+  const [bookmarks, setBookmarks] = useState<string[]>([])
+
   const router = useRouter()
 
   useEffect(() => {
@@ -49,7 +55,36 @@ export default function Home() {
         console.error('Failed to load leaderboard:', err)
         setLoading(false)
       })
+
+    // Load saved bookmarks from localStorage
+    const saved = JSON.parse(localStorage.getItem("ai_leaderboard_bookmarks") || "[]")
+    setBookmarks(saved)
   }, [])
+
+  const toggleBookmark = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    let updated
+    if (bookmarks.includes(id)) {
+      updated = bookmarks.filter(b => b !== id)
+    } else {
+      updated = [...bookmarks, id]
+    }
+    setBookmarks(updated)
+    localStorage.setItem("ai_leaderboard_bookmarks", JSON.stringify(updated))
+  }
+
+  const toggleCompare = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (comparedIds.includes(id)) {
+      setComparedIds(comparedIds.filter(i => i !== id))
+    } else {
+      if (comparedIds.length >= 3) {
+        alert("You can compare up to 3 tools at a time.")
+        return
+      }
+      setComparedIds([...comparedIds, id])
+    }
+  }
 
   // Filter items based on search and category
   const filteredItems = items.filter((item) => {
@@ -67,7 +102,7 @@ export default function Home() {
   })
 
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-100 p-6 md:p-12">
+    <main className="min-h-screen bg-slate-950 text-slate-100 p-6 md:p-12 pb-24">
       <div className="max-w-6xl mx-auto space-y-8">
         
         {/* Header Section */}
@@ -214,15 +249,42 @@ export default function Home() {
                     <div className="text-[11px] text-slate-500">Users</div>
                   </div>
 
-                  <a 
-                    href={item.websiteUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors border border-slate-700/50"
-                    title="Visit Website"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                  </a>
+                  <div className="flex items-center gap-2">
+                    {/* Professional Bookmark Icon Button */}
+                    <button
+                      onClick={(e) => toggleBookmark(item.id, e)}
+                      className={`p-2.5 rounded-xl border transition-colors flex items-center justify-center ${
+                        bookmarks.includes(item.id)
+                          ? 'bg-cyan-500/20 border-cyan-500/40 text-cyan-400'
+                          : 'bg-slate-800 border-slate-700/50 text-slate-400 hover:text-slate-200'
+                      }`}
+                      title="Bookmark Tool"
+                    >
+                      <Bookmark className={`w-4 h-4 ${bookmarks.includes(item.id) ? 'fill-cyan-400' : ''}`} />
+                    </button>
+
+                    {/* Compare Button */}
+                    <button
+                      onClick={(e) => toggleCompare(item.id, e)}
+                      className={`px-3 py-2.5 rounded-xl border text-xs font-semibold transition-all ${
+                        comparedIds.includes(item.id)
+                          ? 'bg-cyan-500 text-slate-950 border-cyan-400'
+                          : 'bg-slate-800 border-slate-700/50 text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      {comparedIds.includes(item.id) ? 'Comparing' : '+ Compare'}
+                    </button>
+
+                    <a 
+                      href={item.websiteUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors border border-slate-700/50"
+                      title="Visit Website"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                    </a>
+                  </div>
                 </div>
               </div>
             ))}
@@ -230,6 +292,68 @@ export default function Home() {
         )}
 
       </div>
+
+      {/* Floating Comparison Drawer */}
+      {comparedIds.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 border border-cyan-500/50 px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-6 z-50">
+          <div className="text-sm font-semibold text-slate-200">
+            {comparedIds.length} tool{comparedIds.length > 1 ? 's' : ''} selected for comparison
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowCompareModal(true)}
+              className="px-4 py-2 rounded-xl bg-cyan-500 text-slate-950 font-bold text-xs hover:bg-cyan-400 transition-colors"
+            >
+              View Comparison
+            </button>
+            <button
+              onClick={() => setComparedIds([])}
+              className="text-xs text-slate-400 hover:text-white"
+            >
+              Clear
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Side-by-Side Comparison Modal */}
+      {showCompareModal && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-4xl w-full p-6 space-y-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center border-b border-slate-800 pb-4">
+              <h2 className="text-xl font-bold text-white">Side-by-Side Tool Comparison</h2>
+              <button 
+                onClick={() => setShowCompareModal(false)}
+                className="text-slate-400 hover:text-white text-sm font-semibold bg-slate-800 px-3 py-1.5 rounded-lg"
+              >
+                Close ✕
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {items
+                .filter(i => comparedIds.includes(i.id))
+                .map(tool => (
+                  <div key={tool.id} className="bg-slate-950/60 border border-slate-800 p-5 rounded-2xl space-y-4">
+                    <div>
+                      <span className="text-[10px] bg-cyan-500/10 text-cyan-400 px-2 py-0.5 rounded-full border border-cyan-500/20">{tool.category}</span>
+                      <h3 className="text-lg font-bold text-white mt-2">{tool.name}</h3>
+                      <p className="text-xs text-slate-400 line-clamp-2 mt-1">{tool.description}</p>
+                    </div>
+
+                    <div className="space-y-2 border-t border-slate-800 pt-4 text-xs">
+                      <div className="flex justify-between"><span className="text-slate-500">Rank:</span> <span className="font-bold text-white">#{tool.currentRank}</span></div>
+                      <div className="flex justify-between"><span className="text-slate-500">Score:</span> <span className="font-bold text-cyan-400">{tool.score}</span></div>
+                      <div className="flex justify-between"><span className="text-slate-500">Growth:</span> <span className="font-bold text-emerald-400">+{tool.growth}%</span></div>
+                      <div className="flex justify-between"><span className="text-slate-500">Active Users:</span> <span className="font-bold text-slate-200">{tool.users}</span></div>
+                      <div className="flex justify-between"><span className="text-slate-500">Type:</span> <span className="font-bold text-purple-400">{tool.type}</span></div>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   )
 }
