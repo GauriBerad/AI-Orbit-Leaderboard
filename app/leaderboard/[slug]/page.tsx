@@ -1,36 +1,25 @@
 import { notFound } from 'next/navigation'
 import { ExternalLink, TrendingUp, Users, ArrowLeft, Activity, Calendar } from 'lucide-react'
 import Link from 'next/link'
-import { pool } from '../../../lib/prisma' // Adjust dots if necessary to match your project root structure
 
 async function getItemDetail(identifier: string) {
   try {
-    const client = await pool.connect()
-    const result = await client.query(
-      `SELECT * FROM "LeaderboardItem" WHERE LOWER(slug) = LOWER($1) OR id = $1 LIMIT 1`,
-      [identifier]
+    // Fetch from your own internal API route which already successfully formats everything
+    const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'
+    const res = await fetch(`${baseUrl}/api/leaderboard`, { cache: 'no-store' })
+    const items = await res.json()
+
+    if (!Array.isArray(items)) return null
+
+    const matchedItem = items.find(
+      (item: any) => 
+        (item.slug && item.slug.toLowerCase() === identifier.toLowerCase()) || 
+        item.id === identifier
     )
 
-    if (result.rows.length === 0) {
-      client.release()
-      return null
-    }
-
-    const item = result.rows[0]
-
-    const historyResult = await client.query(
-      `SELECT * FROM "HistoryItem" WHERE "leaderboardItemId" = $1 ORDER BY "recordedAt" DESC`,
-      [item.id]
-    )
-
-    client.release()
-
-    return {
-      ...item,
-      history: historyResult.rows
-    }
+    return matchedItem || null
   } catch (error) {
-    console.error('Database query failed, falling back to mock/api data:', error)
+    console.error('Failed to fetch item detail:', error)
     return null
   }
 }
