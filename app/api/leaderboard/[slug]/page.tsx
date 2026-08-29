@@ -1,179 +1,130 @@
-'use client'
+import { notFound } from 'next/navigation'
+import { ExternalLink, TrendingUp, Users, ArrowLeft, Activity, Calendar } from 'lucide-react'
+import Link from 'next/link'
 
-import { useState, useEffect } from 'react'
-import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft, TrendingUp, Users, ExternalLink, Sparkles, Award, Globe, ShieldCheck } from 'lucide-react'
+async function getItemDetail(identifier: string) {
+  try {
+    const res = await fetch('https://ai-orbit-leaderboard.vercel.app/api/leaderboard', { cache: 'no-store' })
+    const items = await res.json()
+    
+    if (!Array.isArray(items)) return null
 
-interface HistoryItem {
-  id: string
-  rank: number
-  score: number
-  recordedAt: string
-}
-
-interface LeaderboardItem {
-  id: string
-  name: string
-  slug: string
-  description: string
-  logoUrl: string
-  websiteUrl: string
-  type: string
-  category: string
-  score: number
-  growth: number
-  currentRank: number
-  previousRank: number
-  users: string
-  history: HistoryItem[]
-}
-
-export default function DetailPage() {
-  const params = useParams()
-  const router = useRouter()
-  const slug = params.slug
-
-  const [item, setItem] = useState<LeaderboardItem | null>(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    if (!slug) return
-    // Fetch all items and find the one matching the slug
-    fetch('/api/leaderboard')
-      .then((res) => res.json())
-      .then((data) => {
-        if (Array.isArray(data)) {
-          const found = data.find((i: LeaderboardItem) => i.slug === slug)
-          setItem(found || null)
-        }
-        setLoading(false)
-      })
-      .catch((err) => {
-        console.error('Failed to load item details:', err)
-        setLoading(false)
-      })
-  }, [slug])
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-950 text-slate-400 flex items-center justify-center animate-pulse">
-        Loading AI profile details...
-      </div>
+    // Safely check if item.slug exists before calling toLowerCase()
+    const matchedItem = items.find(
+      (item: any) => 
+        (item.slug && item.slug.toLowerCase() === identifier.toLowerCase()) || 
+        item.id === identifier
     )
+
+    return matchedItem || null
+  } catch (error) {
+    console.error('Failed to fetch item detail:', error)
+    return null
   }
+}
+
+export default async function DetailPage({ params }: { params: { id: string } }) {
+  const item = await getItemDetail(params.id)
 
   if (!item) {
-    return (
-      <main className="min-h-screen bg-slate-950 text-slate-100 p-8 flex flex-col items-center justify-center">
-        <h1 className="text-2xl font-bold mb-4">AI Tool Not Found</h1>
-        <button 
-          onClick={() => router.push('/')}
-          className="px-4 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm text-cyan-400 hover:border-cyan-500 transition-colors"
-        >
-          Back to Leaderboard
-        </button>
-      </main>
-    )
+    notFound()
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-100 p-6 md:p-12">
+    <main className="min-h-screen bg-slate-950 text-slate-100 p-6 md:p-12 pb-24">
       <div className="max-w-4xl mx-auto space-y-8">
         
-        {/* Back Button */}
-        <button 
-          onClick={() => router.push('/')}
-          className="flex items-center gap-2 text-sm text-slate-400 hover:text-cyan-400 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" /> Back to Leaderboard
-        </button>
+        {/* Back Navigation */}
+        <div>
+          <Link 
+            href="/"
+            className="inline-flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-cyan-400 bg-slate-900/80 border border-slate-800 px-4 py-2 rounded-xl transition-all"
+          >
+            <ArrowLeft className="w-4 h-4" /> Back to Leaderboard
+          </Link>
+        </div>
 
-        {/* Header Card */}
-        <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 md:p-8 shadow-xl space-y-6">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-2xl font-bold text-cyan-400 shadow-inner">
-                {item.name.charAt(0)}
+        {/* Header Info */}
+        <div className="bg-slate-900/50 border border-slate-800/80 rounded-3xl p-6 md:p-8 space-y-6 shadow-2xl">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <span className="text-xs bg-amber-500/10 text-amber-400 border border-amber-500/30 px-3 py-1 rounded-full font-bold">
+                  Rank #{item.currentRank}
+                </span>
+                <span className="text-xs bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 px-3 py-1 rounded-full font-medium">
+                  {item.category}
+                </span>
+                <span className="text-xs bg-purple-500/10 text-purple-400 border border-purple-500/30 px-3 py-1 rounded-full font-medium">
+                  {item.type}
+                </span>
               </div>
-              <div>
-                <div className="flex items-center gap-3">
-                  <h1 className="text-2xl md:text-3xl font-extrabold text-white">{item.name}</h1>
-                  <span className="text-xs px-2.5 py-1 rounded-full bg-slate-800 text-cyan-400 border border-slate-700 font-medium">
-                    {item.category}
-                  </span>
-                  <span className="text-xs px-2.5 py-1 rounded-full bg-slate-800 text-purple-400 border border-slate-700 font-medium">
-                    {item.type}
-                  </span>
-                </div>
-                <p className="text-slate-400 mt-2 text-sm md:text-base leading-relaxed">{item.description}</p>
-              </div>
+              <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">{item.name}</h1>
             </div>
 
             <a 
               href={item.websiteUrl} 
               target="_blank" 
               rel="noopener noreferrer"
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-semibold text-sm transition-colors shadow-lg shadow-cyan-500/10"
+              className="px-5 py-2.5 rounded-xl bg-cyan-500 text-slate-950 font-bold text-xs hover:bg-cyan-400 transition-all flex items-center gap-2 shadow-lg shadow-cyan-500/20"
             >
-              <span>Visit Official Site</span>
-              <ExternalLink className="w-4 h-4" />
+              Visit Platform <ExternalLink className="w-4 h-4" />
             </a>
           </div>
 
-          {/* Quick Metrics Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-6 border-t border-slate-800/80">
-            <div className="bg-slate-950/40 p-4 rounded-xl border border-slate-800/50">
-              <div className="text-xs text-slate-400 flex items-center gap-1.5 mb-1">
-                <Award className="w-3.5 h-3.5 text-amber-400" /> Current Rank
+          <p className="text-slate-300 text-sm md:text-base leading-relaxed border-t border-slate-800/80 pt-4">
+            {item.description}
+          </p>
+
+          {/* Key Metrics Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2">
+            <div className="bg-slate-950/60 border border-slate-800/80 p-4 rounded-2xl">
+              <div className="text-xs text-slate-500 flex items-center gap-1.5">
+                <Activity className="w-3.5 h-3.5 text-cyan-400" /> Performance Score
               </div>
-              <div className="text-2xl font-bold text-white">#{item.currentRank}</div>
+              <div className="text-xl font-bold text-cyan-400 mt-1">{item.score}</div>
             </div>
 
-            <div className="bg-slate-950/40 p-4 rounded-xl border border-slate-800/50">
-              <div className="text-xs text-slate-400 flex items-center gap-1.5 mb-1">
-                <Sparkles className="w-3.5 h-3.5 text-cyan-400" /> Overall Score
+            <div className="bg-slate-950/60 border border-slate-800/80 p-4 rounded-2xl">
+              <div className="text-xs text-slate-500 flex items-center gap-1.5">
+                <TrendingUp className="w-3.5 h-3.5 text-emerald-400" /> Monthly Growth
               </div>
-              <div className="text-2xl font-bold text-white">{item.score} <span className="text-xs text-slate-500 font-normal">/ 100</span></div>
+              <div className="text-xl font-bold text-emerald-400 mt-1">+{item.growth}%</div>
             </div>
 
-            <div className="bg-slate-950/40 p-4 rounded-xl border border-slate-800/50">
-              <div className="text-xs text-slate-400 flex items-center gap-1.5 mb-1">
-                <TrendingUp className="w-3.5 h-3.5 text-emerald-400" /> Growth Metric
+            <div className="bg-slate-950/60 border border-slate-800/80 p-4 rounded-2xl">
+              <div className="text-xs text-slate-500 flex items-center gap-1.5">
+                <Users className="w-3.5 h-3.5 text-purple-400" /> Active Users
               </div>
-              <div className="text-2xl font-bold text-emerald-400">+{item.growth}%</div>
+              <div className="text-xl font-bold text-slate-200 mt-1">{item.users}</div>
             </div>
 
-            <div className="bg-slate-950/40 p-4 rounded-xl border border-slate-800/50">
-              <div className="text-xs text-slate-400 flex items-center gap-1.5 mb-1">
-                <Users className="w-3.5 h-3.5 text-blue-400" /> Active Users
+            <div className="bg-slate-950/60 border border-slate-800/80 p-4 rounded-2xl">
+              <div className="text-xs text-slate-500 flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-amber-400" /> Previous Rank
               </div>
-              <div className="text-2xl font-bold text-white">{item.users}</div>
+              <div className="text-xl font-bold text-white mt-1">#{item.previousRank}</div>
             </div>
           </div>
         </div>
 
-        {/* Historical Progression Section */}
-        <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 md:p-8 shadow-xl space-y-6">
-          <h2 className="text-lg font-bold text-white flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-cyan-400" /> Historical Performance & Ranking
-          </h2>
-          
-          <div className="space-y-3">
-            {item.history && item.history.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                {item.history.map((h) => (
-                  <div key={h.id} className="bg-slate-950/50 border border-slate-800 p-4 rounded-xl text-center">
-                    <div className="text-xs text-slate-400 uppercase tracking-wider">{h.recordedAt}</div>
-                    <div className="text-xl font-bold text-white mt-1">Rank #{h.rank}</div>
-                    <div className="text-xs text-cyan-400 mt-0.5">Score: {h.score}</div>
+        {/* Historical Performance Logs */}
+        {item.history && item.history.length > 0 && (
+          <div className="bg-slate-900/50 border border-slate-800/80 rounded-3xl p-6 md:p-8 space-y-4">
+            <h3 className="text-lg font-bold text-white">Historical Benchmark Logs</h3>
+            <div className="space-y-2">
+              {item.history.map((hist: any) => (
+                <div key={hist.id} className="bg-slate-950/60 border border-slate-800 p-4 rounded-xl flex items-center justify-between text-xs md:text-sm">
+                  <span className="text-slate-400">{new Date(hist.recordedAt).toLocaleDateString()}</span>
+                  <div className="flex items-center gap-6">
+                    <span className="text-slate-300">Rank: <strong className="text-white">#{hist.rank}</strong></span>
+                    <span className="text-cyan-400">Score: <strong>{hist.score}</strong></span>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-slate-500">No historical data points recorded yet.</p>
-            )}
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
       </div>
     </main>
