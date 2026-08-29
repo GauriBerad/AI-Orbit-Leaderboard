@@ -2,14 +2,15 @@ import { notFound } from 'next/navigation'
 import { ExternalLink, TrendingUp, Users, ArrowLeft, Activity, Calendar } from 'lucide-react'
 import Link from 'next/link'
 
+// Direct fallback mock list or fetch from your database helper
 async function getItemDetail(identifier: string) {
   try {
-    const res = await fetch('https://ai-orbit-leaderboard.vercel.app/api/leaderboard', { cache: 'no-store' })
+    // Call your internal API handler logic or fetch locally
+    const res = await fetch('http://localhost:3000/api/leaderboard', { cache: 'no-store' })
     const items = await res.json()
     
     if (!Array.isArray(items)) return null
 
-    // Safely check if item.slug exists before calling toLowerCase()
     const matchedItem = items.find(
       (item: any) => 
         (item.slug && item.slug.toLowerCase() === identifier.toLowerCase()) || 
@@ -23,8 +24,9 @@ async function getItemDetail(identifier: string) {
   }
 }
 
-export default async function DetailPage({ params }: { params: { id: string } }) {
-  const item = await getItemDetail(params.id)
+export default async function DetailPage({ params }: { params: Promise<{ slug: string }> }) {
+  const resolvedParams = await params
+  const item = await getItemDetail(resolvedParams.slug)
 
   if (!item) {
     notFound()
@@ -115,7 +117,7 @@ export default async function DetailPage({ params }: { params: { id: string } })
             <div className="space-y-2">
               {item.history.map((hist: any) => (
                 <div key={hist.id} className="bg-slate-950/60 border border-slate-800 p-4 rounded-xl flex items-center justify-between text-xs md:text-sm">
-                  <span className="text-slate-400">{new Date(hist.recordedAt).toLocaleDateString()}</span>
+                  <span className="text-slate-400">{hist.recordedAt}</span>
                   <div className="flex items-center gap-6">
                     <span className="text-slate-300">Rank: <strong className="text-white">#{hist.rank}</strong></span>
                     <span className="text-cyan-400">Score: <strong>{hist.score}</strong></span>
