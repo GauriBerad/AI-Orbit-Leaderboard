@@ -4,8 +4,11 @@ import Link from 'next/link'
 
 async function getItemDetail(identifier: string) {
   try {
-    // Fetch from your own internal API route which already successfully formats everything
-    const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'
+    // Determine the proper base URL for production vs local
+    const baseUrl = process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL}` 
+      : 'http://localhost:3000'
+
     const res = await fetch(`${baseUrl}/api/leaderboard`, { cache: 'no-store' })
     const items = await res.json()
 
