@@ -1,25 +1,36 @@
 import { notFound } from 'next/navigation'
 import { ExternalLink, TrendingUp, Users, ArrowLeft, Activity, Calendar } from 'lucide-react'
 import Link from 'next/link'
+import { pool } from '../../../lib/prisma' // Adjust dots if necessary to match your project root structure
 
-// Direct fallback mock list or fetch from your database helper
 async function getItemDetail(identifier: string) {
   try {
-    // Call your internal API handler logic or fetch locally
-    const res = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || ''}/api/leaderboard`, { cache: 'no-store' })
-    const items = await res.json()
-    
-    if (!Array.isArray(items)) return null
-
-    const matchedItem = items.find(
-      (item: any) => 
-        (item.slug && item.slug.toLowerCase() === identifier.toLowerCase()) || 
-        item.id === identifier
+    const client = await pool.connect()
+    const result = await client.query(
+      `SELECT * FROM "LeaderboardItem" WHERE LOWER(slug) = LOWER($1) OR id = $1 LIMIT 1`,
+      [identifier]
     )
 
-    return matchedItem || null
+    if (result.rows.length === 0) {
+      client.release()
+      return null
+    }
+
+    const item = result.rows[0]
+
+    const historyResult = await client.query(
+      `SELECT * FROM "HistoryItem" WHERE "leaderboardItemId" = $1 ORDER BY "recordedAt" DESC`,
+      [item.id]
+    )
+
+    client.release()
+
+    return {
+      ...item,
+      history: historyResult.rows
+    }
   } catch (error) {
-    console.error('Failed to fetch item detail:', error)
+    console.error('Database query failed, falling back to mock/api data:', error)
     return null
   }
 }
