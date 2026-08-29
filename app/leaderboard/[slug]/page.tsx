@@ -6,7 +6,7 @@ import Link from 'next/link'
 async function getItemDetail(identifier: string) {
   try {
     // Call your internal API handler logic or fetch locally
-    const res = await fetch('http://localhost:3000/api/leaderboard', { cache: 'no-store' })
+    const res = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || ''}/api/leaderboard`, { cache: 'no-store' })
     const items = await res.json()
     
     if (!Array.isArray(items)) return null
